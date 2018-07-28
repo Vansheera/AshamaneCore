@@ -528,6 +528,7 @@ struct CreatureData
     int32 terrainSwapMap;
     uint32 ScriptId;
     bool dbData;
+    float size = 0.0f;
 };
 
 struct CreatureModelInfo

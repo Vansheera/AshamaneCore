@@ -606,6 +606,14 @@ class spell_hun_tame_beast : public SpellScriptLoader
 
                 if (!GetExplTargetUnit())
                     return SPELL_FAILED_BAD_IMPLICIT_TARGETS;
+            void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            {
+                if (GetTargetApplication()->GetRemoveMode() == AURA_REMOVE_BY_DEFAULT || GetTargetApplication()->GetRemoveMode() == AURA_REMOVE_BY_INTERRUPT)
+                    return;
+                
+                if (!GetTarget()->HasAura(SPELL_HUNTER_MISDIRECTION_PROC))
+                    GetTarget()->ResetRedirectThreat();
+            }
 
                 if (!caster->ToPlayer()->GetFirstUnusedActivePetSlot())
                     return SPELL_FAILED_DONT_REPORT;
