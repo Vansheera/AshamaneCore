@@ -106,7 +106,7 @@ public:
     {
         ObjectGuid::LowType guidLow = GetGuidFromArgsOrLastTargetedGo(handler, args);
         if (!guidLow)
-            guidLow = FindNearby(handler);
+            return false;
 
         GameObject* object = handler->GetObjectFromPlayerMapByDbGuid(guidLow);
         if (!object)
@@ -352,79 +352,12 @@ public:
         return true;
     }
 
-    static ObjectGuid::LowType FindNearby(ChatHandler* handler) {
-        Player* player = handler->GetSession()->GetPlayer();
-        QueryResult result;
-        GameEventMgr::ActiveEvents const& activeEventsList = sGameEventMgr->GetActiveEventList();
-
-        std::ostringstream eventFilter;
-        eventFilter << " AND (eventEntry IS NULL ";
-        bool initString = true;
-
-        for (GameEventMgr::ActiveEvents::const_iterator itr = activeEventsList.begin(); itr != activeEventsList.end(); ++itr)
-        {
-            if (initString)
-            {
-                eventFilter << "OR eventEntry IN (" << *itr;
-                initString = false;
-            }
-            else
-                eventFilter << ',' << *itr;
-        }
-
-        if (!initString)
-            eventFilter << "))";
-        else
-            eventFilter << ')';
-
-        result = WorldDatabase.PQuery("SELECT gameobject.guid, id, position_x, position_y, position_z, orientation, map, PhaseId, PhaseGroup, "
-            "(POW(position_x - %f, 2) + POW(position_y - %f, 2) + POW(position_z - %f, 2)) AS order_ FROM gameobject "
-            "LEFT OUTER JOIN game_event_gameobject on gameobject.guid = game_event_gameobject.guid WHERE map = '%i' %s ORDER BY order_ ASC LIMIT 10",
-            handler->GetSession()->GetPlayer()->GetPositionX(), handler->GetSession()->GetPlayer()->GetPositionY(), handler->GetSession()->GetPlayer()->GetPositionZ(),
-            handler->GetSession()->GetPlayer()->GetMapId(), eventFilter.str().c_str());
-
-        if (!result)
-            return false;
-
-        bool found = false;
-        float x, y, z, o;
-        ObjectGuid::LowType WhatWeWant;
-        uint32 id, phaseId, phaseGroup;
-        uint16 mapId;
-        uint32 poolId;
-
-        do
-        {
-            Field* fields = result->Fetch();
-            WhatWeWant = fields[0].GetUInt64();
-            id = fields[1].GetUInt32();
-            x = fields[2].GetFloat();
-            y = fields[3].GetFloat();
-            z = fields[4].GetFloat();
-            o = fields[5].GetFloat();
-            mapId = fields[6].GetUInt16();
-            phaseId = fields[7].GetUInt32();
-            phaseGroup = fields[8].GetUInt32();
-            poolId = sPoolMgr->IsPartOfAPool<GameObject>(WhatWeWant);
-            if (!poolId || sPoolMgr->IsSpawnedObject<GameObject>(WhatWeWant))
-                found = true;
-        } while (result->NextRow() && !found);
-
-        if (!found)
-        {
-            handler->PSendSysMessage(LANG_GAMEOBJECT_NOT_EXIST, id);
-            return false;
-        }
-
-        return WhatWeWant;
-    }
-
     //delete object by selection or guid
     static bool HandleGameObjectDeleteCommand(ChatHandler* handler, char const* args)
     {
         ObjectGuid::LowType guidLow = GetGuidFromArgsOrLastTargetedGo(handler, args);
         if (!guidLow)
-            guidLow = FindNearby(handler);
+            return false;
 
         GameObject* object = handler->GetObjectFromPlayerMapByDbGuid(guidLow);
         if (!object)

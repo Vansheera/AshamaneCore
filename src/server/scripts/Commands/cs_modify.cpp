@@ -15,12 +15,12 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
- /* ScriptData
- Name: modify_commandscript
- %Complete: 100
- Comment: All modify related commands
- Category: commandscripts
- EndScriptData */
+/* ScriptData
+Name: modify_commandscript
+%Complete: 100
+Comment: All modify related commands
+Category: commandscripts
+EndScriptData */
 
 #include "ScriptMgr.h"
 #include "Chat.h"
@@ -220,9 +220,9 @@ public:
         if (!pfactionid)
         {
             uint32 factionid = target->getFaction();
-            uint32 flag = target->GetUInt32Value(UNIT_FIELD_FLAGS);
-            uint64 npcflag = target->GetUInt64Value(UNIT_NPC_FLAGS);
-            uint32 dyflag = target->GetUInt32Value(OBJECT_DYNAMIC_FLAGS);
+            uint32 flag      = target->GetUInt32Value(UNIT_FIELD_FLAGS);
+            uint64 npcflag   = target->GetUInt64Value(UNIT_NPC_FLAGS);
+            uint32 dyflag    = target->GetUInt32Value(OBJECT_DYNAMIC_FLAGS);
             handler->PSendSysMessage(LANG_CURRENT_FACTION, target->GetGUID().ToString().c_str(), factionid, flag, std::to_string(npcflag).c_str(), dyflag);
             return true;
         }
@@ -292,7 +292,7 @@ public:
         char* pmark = strtok(NULL, " ");
 
         uint8 spellflatid = atoi(pspellflatid);
-        uint8 op = atoi(pop);
+        uint8 op   = atoi(pop);
         uint16 val = atoi(pval);
         if (!pmark)
             mark = 65535;
@@ -488,22 +488,9 @@ public:
     //Edit Player or Creature Scale
     static bool HandleModifyScaleCommand(ChatHandler* handler, const char* args)
     {
-        Player* player = handler->GetSession()->GetPlayer();
-
         float Scale;
         Unit* target = handler->getSelectedUnit();
-
-        if (player->GetSession()->GetSecurity() >= 3)
-        {
-            if (CheckModifySpeed(handler, args, player, Scale, 0.1f, 100.0f, false))
-            {
-                NotifyModification(handler, target, LANG_YOU_CHANGE_SIZE, LANG_YOURS_SIZE_CHANGED, Scale);
-                target->SetObjectScale(Scale);
-                return true;
-            }
-        }
-
-        if (CheckModifySpeed(handler, args, target, Scale, 0.1f, 2.0f, false))
+        if (CheckModifySpeed(handler, args, target, Scale, 0.1f, 10.0f, false))
         {
             NotifyModification(handler, target, LANG_YOU_CHANGE_SIZE, LANG_YOURS_SIZE_CHANGED, Scale);
             target->SetObjectScale(Scale);
@@ -649,7 +636,7 @@ public:
             return false;
 
         uint16 field = atoi(pField);
-        uint32 bit = atoi(pBit);
+        uint32 bit   = atoi(pBit);
 
         if (field < OBJECT_END || field >= target->GetValuesCount())
         {
@@ -664,14 +651,14 @@ public:
             return false;
         }
 
-        if (target->HasFlag(field, (1 << (bit - 1))))
+        if (target->HasFlag(field, (1<<(bit-1))))
         {
-            target->RemoveFlag(field, (1 << (bit - 1)));
+            target->RemoveFlag(field, (1<<(bit-1)));
             handler->PSendSysMessage(LANG_REMOVE_BIT, bit, field);
         }
         else
         {
-            target->SetFlag(field, (1 << (bit - 1)));
+            target->SetFlag(field, (1<<(bit-1)));
             handler->PSendSysMessage(LANG_SET_BIT, bit, field);
         }
         return true;
@@ -775,9 +762,9 @@ public:
                     if (deltaTxt)
                     {
                         int32 delta = atoi(deltaTxt);
-                        if ((delta < 0) || (delta > ReputationMgr::PointsInRank[r] - 1))
+                        if ((delta < 0) || (delta > ReputationMgr::PointsInRank[r] -1))
                         {
-                            handler->PSendSysMessage(LANG_COMMAND_FACTION_DELTA, (ReputationMgr::PointsInRank[r] - 1));
+                            handler->PSendSysMessage(LANG_COMMAND_FACTION_DELTA, (ReputationMgr::PointsInRank[r]-1));
                             handler->SetSentErrorMessage(true);
                             return false;
                         }
@@ -966,7 +953,7 @@ public:
 
         return true;
     }
-    //demorph player or unit
+//demorph player or unit
     static bool HandleDeMorphCommand(ChatHandler* handler, const char* /*args*/)
     {
         Unit* target = handler->getSelectedUnit();
@@ -996,7 +983,7 @@ public:
         }
 
         uint32 currencyId = atoi(strtok((char*)args, " "));
-        const CurrencyTypesEntry* currencyType = sCurrencyTypesStore.LookupEntry(currencyId);
+        const CurrencyTypesEntry* currencyType =  sCurrencyTypesStore.LookupEntry(currencyId);
         if (!currencyType)
             return false;
 
