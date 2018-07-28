@@ -103,11 +103,6 @@ bool Garrison::LoadFromDB()
     stmt->setUInt8(1, _garrisonType);
     PreparedQueryResult missionsStmt = CharacterDatabase.Query(stmt);
 
-    stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_GARRISON_MISSION_REWARDS);
-    stmt->setUInt64(0, lowGuid);
-    stmt->setUInt8(1, _garrisonType);
-    PreparedQueryResult rewardsStmt = CharacterDatabase.Query(stmt);
-
     if (!garrisonStmt)
         return false;
 
@@ -196,38 +191,7 @@ bool Garrison::LoadFromDB()
             mission.PacketInfo.MissionDuration  = missionEntry->Duration;
             mission.PacketInfo.MissionState     = fields[4].GetUInt8();
 
-            if (mission.PacketInfo.StartTime == 0)
-                mission.PacketInfo.StartTime = time_t(2254525440);
-
         } while (missionsStmt->NextRow());
-
-        if (rewardsStmt)
-        {
-            do
-            {
-                fields = rewardsStmt->Fetch();
-                uint64 dbId = fields[0].GetUInt64();
-                uint8 type  = fields[1].GetUInt8();
-
-                auto itr = _missions.find(dbId);
-                if (itr == _missions.end())
-                    continue;
-
-                WorldPackets::Garrison::GarrisonMissionReward reward;
-                reward.ItemID           = fields[2].GetInt32();
-                reward.ItemQuantity     = fields[3].GetUInt32();
-                reward.CurrencyID       = fields[4].GetInt32();
-                reward.CurrencyQuantity = fields[5].GetUInt32();
-                reward.FollowerXP       = fields[6].GetUInt32();
-                reward.BonusAbilityID   = fields[7].GetUInt32();
-
-                if (type == GarrisonMission::RewardType::Normal)
-                    itr->second.Rewards.push_back(reward);
-                else
-                    itr->second.BonusRewards.push_back(reward);
-
-            } while (abilitiesStmt->NextRow());
-        }
     }
 
     return true;
@@ -235,8 +199,6 @@ bool Garrison::LoadFromDB()
 
 void Garrison::SaveToDB(SQLTransaction trans)
 {
-    DeleteFromDB(trans);
-
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHARACTER_GARRISON);
     stmt->setUInt64(0, _owner->GetGUID().GetCounter());
     stmt->setUInt8(1, _garrisonType);
@@ -284,61 +246,10 @@ void Garrison::SaveToDB(SQLTransaction trans)
         stmt->setUInt8(index++, _garrisonType);
         stmt->setUInt32(index++, mission.PacketInfo.MissionRecID);
         stmt->setUInt32(index++, mission.PacketInfo.OfferTime);
-        stmt->setUInt32(index++, mission.PacketInfo.StartTime != time_t(2254525440) ? mission.PacketInfo.StartTime: 0);
+        stmt->setUInt32(index++, mission.PacketInfo.StartTime);
         stmt->setUInt32(index++, mission.PacketInfo.MissionState);
         trans->Append(stmt);
-
-        uint8 rewardType = GarrisonMission::RewardType::Normal;
-        for (auto rewards : { mission.Rewards, mission.BonusRewards })
-        {
-            for (WorldPackets::Garrison::GarrisonMissionReward reward : rewards)
-            {
-                stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHARACTER_GARRISON_MISSION_REWARDS);
-                stmt->setUInt64(0, mission.PacketInfo.DbID);
-                stmt->setUInt8(1, rewardType++);
-                stmt->setInt32(2, reward.ItemID);
-                stmt->setUInt32(3, reward.ItemQuantity);
-                stmt->setInt32(4, reward.CurrencyID);
-                stmt->setUInt32(5, reward.CurrencyQuantity);
-                stmt->setUInt32(6, reward.FollowerXP);
-                stmt->setUInt32(7, reward.BonusAbilityID);
-                trans->Append(stmt);
-            }
-        }
     }
-}
-
-void Garrison::DeleteFromDB(SQLTransaction trans)
-{
-    Garrison::DeleteFromDB(trans, _owner->GetGUID().GetCounter(), GetType());
-}
-
-void Garrison::DeleteFromDB(SQLTransaction trans, ObjectGuid::LowType guid, GarrisonType garrType)
-{
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHARACTER_GARRISON);
-    stmt->setUInt64(0, guid);
-    stmt->setUInt8(1, garrType);
-    trans->Append(stmt);
-
-    stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHARACTER_GARRISON_MISSIONS);
-    stmt->setUInt64(0, guid);
-    stmt->setUInt8(1, garrType);
-    trans->Append(stmt);
-
-    stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHARACTER_GARRISON_FOLLOWERS);
-    stmt->setUInt64(0, guid);
-    stmt->setUInt8(1, garrType);
-    trans->Append(stmt);
-
-    stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHARACTER_GARRISON_BLUEPRINTS);
-    stmt->setUInt64(0, guid);
-    stmt->setUInt8(1, garrType);
-    trans->Append(stmt);
-
-    stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHARACTER_GARRISON_BUILDINGS);
-    stmt->setUInt64(0, guid);
-    stmt->setUInt8(1, garrType);
-    trans->Append(stmt);
 }
 
 void Garrison::Enter()
@@ -438,34 +349,6 @@ uint32 Garrison::GetActiveFollowersCount() const
     });
 }
 
-uint32 Garrison::GetAverageFollowerILevel() const
-{
-    uint32 followerIlevels = 0;
-    uint32 activeFollowerCount = 0;
-
-    for (auto itr : _followers)
-    {
-        if (itr.second.PacketInfo.FollowerStatus != FOLLOWER_STATUS_INACTIVE)
-        {
-            followerIlevels += itr.second.GetItemLevel();
-            ++activeFollowerCount;
-        }
-    }
-
-    return ceil(float(followerIlevels) / float(activeFollowerCount));
-}
-
-uint32 Garrison::GetMaxFollowerLevel() const
-{
-    uint32 maxFollowerLevel = 0;
-
-    for (auto itr : _followers)
-        if (itr.second.PacketInfo.FollowerStatus != FOLLOWER_STATUS_INACTIVE)
-            maxFollowerLevel = std::max(maxFollowerLevel, itr.second.PacketInfo.FollowerLevel);
-
-    return maxFollowerLevel;
-}
-
 void Garrison::AddMission(uint32 garrMissionId)
 {
     GarrMissionEntry const* missionEntry = sGarrMissionStore.LookupEntry(garrMissionId);
@@ -479,7 +362,7 @@ void Garrison::AddMission(uint32 garrMissionId)
     mission.PacketInfo.MissionRecID = garrMissionId;
     mission.PacketInfo.OfferTime = time(nullptr);
     mission.PacketInfo.OfferDuration = missionEntry->OfferTime;
-    mission.PacketInfo.StartTime = time_t(2254525440);
+    mission.PacketInfo.StartTime = time_t(0);
     mission.PacketInfo.TravelDuration = missionEntry->TravelTime;
     mission.PacketInfo.MissionDuration = missionEntry->Duration;
     mission.PacketInfo.MissionState = 0;
@@ -489,7 +372,7 @@ void Garrison::AddMission(uint32 garrMissionId)
     // TODO : Generate rewards for mission
     WorldPackets::Garrison::GarrisonMissionReward reward;
     reward.ItemID = 140587;
-    reward.ItemQuantity = 1;
+    reward.Quantity = 1;
     reward.CurrencyID = 0;
     reward.CurrencyQuantity = 0;
     reward.FollowerXP = 0;
@@ -503,7 +386,7 @@ void Garrison::AddMission(uint32 garrMissionId)
     garrisonAddMissionResult.State          = GarrisonMission::State::Available;
     garrisonAddMissionResult.Mission        = mission.PacketInfo;
     garrisonAddMissionResult.Rewards        = mission.Rewards;
-    garrisonAddMissionResult.BonusRewards   = mission.BonusRewards;
+    garrisonAddMissionResult.OvermaxRewards = mission.OvermaxRewards;
     garrisonAddMissionResult.Success        = true;
     _owner->SendDirectMessage(garrisonAddMissionResult.Write());
 }
@@ -517,7 +400,7 @@ Garrison::Mission const* Garrison::GetMission(uint64 dbId) const
     return nullptr;
 }
 
-bool Garrison::HasMission(uint32 garrMissionId) const
+bool Garrison::HasMission(uint32 garrMissionId)
 {
     return std::count_if(GetMissions().begin(), GetMissions().end(), [garrMissionId](auto missionItr)
     {
@@ -548,10 +431,6 @@ std::pair<std::vector<GarrMissionEntry const*>, std::vector<double>> Garrison::G
     std::vector<GarrMissionEntry const*> availableMissions;
     std::vector<double> weights;
 
-    uint32 const maxFollowerlevel       = GetMaxFollowerLevel();
-    uint32 const activeFolowerCount     = GetActiveFollowersCount();
-    uint32 const averageFollowerILevel  = GetAverageFollowerILevel();
-
     for (uint32 i = 0; i < sGarrMissionStore.GetNumRows(); ++i)
     {
         GarrMissionEntry const* missionEntry = sGarrMissionStore.LookupEntry(i);
@@ -559,34 +438,28 @@ std::pair<std::vector<GarrMissionEntry const*>, std::vector<double>> Garrison::G
         if (!missionEntry)
             continue;
 
-        if (HasMission(missionEntry->ID))
-            continue;
+        uint32 alreadyHasMission = std::count_if(GetMissions().begin(), GetMissions().end(), [missionEntry](auto missionItr)
+        {
+            return missionItr.second.PacketInfo.MissionRecID == missionEntry->ID;
+        });
 
-        // Most missions with Duration <= 10 are tests
-        if (missionEntry->Duration <= 10)
+        if (alreadyHasMission)
             continue;
 
         if (missionEntry->GarrTypeID != GetType())
             continue;
 
-        if (missionEntry->RequiredLevel > maxFollowerlevel)
+        if (missionEntry->RequiredLevel > GetOwner()->getLevel())
             continue;
 
-        if (missionEntry->RequiredFollowersCount > activeFolowerCount)
+        if (missionEntry->RequiredFollowersCount > GetActiveFollowersCount())
             continue;
 
-        if (missionEntry->RequiredItemLevel > averageFollowerILevel)
-            continue;
-
-        uint32 requiredClass = sGarrisonMgr.GetClassByMissionType(missionEntry->MissionType);
-        if (requiredClass != CLASS_NONE && requiredClass != _owner->getClass())
-            continue;
-
-        uint32 requiredTeam = sGarrisonMgr.GetFactionByMissionType(missionEntry->MissionType);
-        if (requiredTeam != TEAM_OTHER && requiredTeam != _owner->GetTeamId())
+        if (missionEntry->RequiredItemLevel > GetOwner()->GetAverageItemLevelEquipped())
             continue;
 
         double weight = 100.0;
+
         if (missionEntry->Flags & GarrisonMission::Flags::Rare)
             weight = 25.0;
 

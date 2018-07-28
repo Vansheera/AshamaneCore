@@ -80,6 +80,7 @@ public:
 
     bool LoadFromDB() override;
     void SaveToDB(SQLTransaction trans) override;
+    static void DeleteFromDB(ObjectGuid::LowType ownerGuid, SQLTransaction trans);
 
     bool Create(uint32 garrSiteId) override;
     bool CanUpgrade(bool checkCost = true);

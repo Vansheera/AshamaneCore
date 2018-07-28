@@ -48,7 +48,7 @@ public:
     {
         WorldPackets::Garrison::GarrisonMission PacketInfo;
         std::vector<WorldPackets::Garrison::GarrisonMissionReward> Rewards;
-        std::vector<WorldPackets::Garrison::GarrisonMissionReward> BonusRewards;
+        std::vector<WorldPackets::Garrison::GarrisonMissionReward> OvermaxRewards;
         bool CanStartMission = true;
     };
 
@@ -57,8 +57,6 @@ public:
 
     virtual bool LoadFromDB();
     virtual void SaveToDB(SQLTransaction trans);
-    void DeleteFromDB(SQLTransaction trans);
-    static void DeleteFromDB(SQLTransaction trans, ObjectGuid::LowType guid, GarrisonType garrType);
 
     virtual bool Create(uint32 garrSiteId);
     void Update(uint32 const diff);
@@ -84,8 +82,6 @@ public:
     Follower const* GetFollower(uint64 dbId) const;
     std::unordered_map<uint64 /*dbId*/, Garrison::Follower> const& GetFollowers() const { return _followers; }
     uint32 GetActiveFollowersCount() const;
-    uint32 GetAverageFollowerILevel() const;
-    uint32 GetMaxFollowerLevel() const;
 
     uint32 GetFollowerActivationLimit() const { return _followerActivationsRemainingToday; }
     void ResetFollowerActivationLimit() { _followerActivationsRemainingToday = 1; }
@@ -93,7 +89,7 @@ public:
     // Missions
     void AddMission(uint32 garrMissionId);
     Mission const* GetMission(uint64 dbId) const;
-    bool HasMission(uint32 garrMissionId) const;
+    bool HasMission(uint32 garrMissionId);
     std::unordered_map<uint64 /*dbId*/, Garrison::Mission> const& GetMissions() const { return _missions; }
     void StartMission(uint32 garrMissionId, std::vector<uint64 /*DbID*/> Followers);
 
