@@ -790,8 +790,6 @@ enum RBACPermissions
     RBAC_PERM_COMMAND_BLACKMARKET_SET_DURATION               = 2005,
     RBAC_PERM_COMMAND_NPC_RELOAD                             = 2006,
     RBAC_PERM_COMMAND_LFG_DEBUG                              = 2007,
-    RBAC_PERM_COMMAND_GOBJECT_SET_SCALE                      = 1398,
-    RBAC_PERM_COMMAND_NPC_SET_SCALE                          = 1589,
     RBAC_PERM_MAX
 };
 
