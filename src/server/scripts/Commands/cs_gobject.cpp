@@ -103,15 +103,25 @@ public:
 
     static bool HandleGameObjectActivateCommand(ChatHandler* handler, char const* args)
     {
+        Player* player = handler->GetSession()->GetPlayer();
         ObjectGuid::LowType guidLow = GetGuidFromArgsOrLastTargetedGo(handler, args);
-        if (!guidLow)
-            guidLow = FindNearby(handler);
+        ObjectGuid::LowType gobjectNear = FindNearby(handler);
+
+        if (!gobjectNear || gobjectNear == 1) {
+            return false;
+        }
+        else if (!guidLow) {
+            guidLow = gobjectNear;
+        }
 
         GameObject* object = handler->GetObjectFromPlayerMapByDbGuid(guidLow);
         if (!object)
         {
             handler->PSendSysMessage(LANG_COMMAND_OBJNOTFOUND, std::to_string(guidLow).c_str());
             handler->SetSentErrorMessage(true);
+
+            player->SetLastTargetedGO(NULL);
+
             return false;
         }
 
