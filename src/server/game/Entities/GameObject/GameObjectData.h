@@ -876,6 +876,7 @@ struct GameObjectData
     uint32 ScriptId;
     bool dbData;
     bool isActive;
+    float size = 0.0f;
 };
 
 #endif // GameObjectData_h__

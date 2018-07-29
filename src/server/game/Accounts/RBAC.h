@@ -790,6 +790,9 @@ enum RBACPermissions
     RBAC_PERM_COMMAND_BLACKMARKET_SET_DURATION               = 2005,
     RBAC_PERM_COMMAND_NPC_RELOAD                             = 2006,
     RBAC_PERM_COMMAND_LFG_DEBUG                              = 2007,
+
+    //Jok Custom
+    RBAC_PERM_COMMAND_GOBJECT_SET_SCALE                      = 7000,
     RBAC_PERM_MAX
 };
 
