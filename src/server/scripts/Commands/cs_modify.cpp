@@ -1015,6 +1015,24 @@ public:
 
         target->DeMorph();
 
+        QueryResult checkDB = WorldDatabase.PQuery("SELECT guid FROM player_perma WHERE guid = %u", handler->GetSession()->GetPlayer()->GetGUID().GetCounter());
+        if (!checkDB)
+        {
+            //Permamorph !
+            PreparedStatement* getDisplay = WorldDatabase.GetPreparedStatement(WORLD_INS_PERMAMORPH);
+            getDisplay->setUInt64(0, handler->GetSession()->GetPlayer()->GetGUID().GetCounter());
+            getDisplay->setUInt32(1, 0);
+            WorldDatabase.Execute(getDisplay);
+
+        }
+        else
+        {
+            PreparedStatement* updDisplay = WorldDatabase.GetPreparedStatement(WORLD_UPD_PERMAMORPH);
+            updDisplay->setUInt32(0, 0);
+            updDisplay->setUInt64(1, handler->GetSession()->GetPlayer()->GetGUID().GetCounter());
+            WorldDatabase.Execute(updDisplay);
+        }
+
         return true;
     }
 
