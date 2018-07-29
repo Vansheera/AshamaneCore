@@ -119,6 +119,12 @@ public:
             { "mailbox",          rbac::RBAC_PERM_COMMAND_MAILBOX,          false, &HandleMailBoxCommand,          "" },
             { "auras  ",          rbac::RBAC_PERM_COMMAND_LIST_AURAS,       false, &HandleAurasCommand,            "" },
             { "light  ",          rbac::RBAC_PERM_COMMAND_LIST_AURAS,       false, &HandleLightCommand,            "" },
+            //Jok Custom
+            { "spellvis",         rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleSpellVisCommand,         "" },
+            { "unspellvis",       rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleUnSpellVisCommand,       "" },
+            { "spellviskit",      rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleSpellViskitCommand,      "" },
+            { "unspellviskit",    rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleUnSpellViskitCommand,    "" },
+            { "animkit",          rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleAnimKitCommand,          "" },
         };
         return commandTable;
     }
@@ -2818,6 +2824,124 @@ public:
 
         Player* player = handler->GetSession()->GetPlayer();
         player->GetMap()->SetZoneOverrideLight(player->GetAreaId(), lightId, 5000);
+
+        return true;
+    }
+
+    static bool HandleSpellViskitCommand(ChatHandler* handler, char const* args)
+    {
+        Unit* target = handler->getSelectedUnit();
+        //Player* target = handler->GetSession()->GetPlayer(); // self jic
+
+        if (!*args)
+            return false;
+
+        const char* entry;
+        entry = strtok((char*)args, " ");
+
+        const uint32 newEntry = uint32(atoi(entry));
+
+        if (target) {
+            target->SendPlaySpellVisualKit(newEntry, 2, 0);
+        }
+        else {
+            handler->GetSession()->GetPlayer()->SendPlaySpellVisualKit(newEntry, 2, 0);
+        }
+
+
+        return true;
+    }
+
+    static bool HandleUnSpellViskitCommand(ChatHandler* handler, char const* args)
+    {
+        Unit* target = handler->getSelectedUnit();
+        // Player* target = handler->GetSession()->GetPlayer(); // self jic
+
+        if (!*args)
+            return false;
+
+        const char* entry;
+        entry = strtok((char*)args, " ");
+
+        const uint32 newEntry = uint32(atoi(entry));
+
+        if (target) {
+            target->SendCancelSpellVisualKit(newEntry);
+        }
+        else {
+            handler->GetSession()->GetPlayer()->SendCancelSpellVisualKit(newEntry);
+        }
+
+        return true;
+    }
+
+    static bool HandleAnimKitCommand(ChatHandler* handler, char const* args)
+    {
+        Unit* target = handler->getSelectedUnit();
+        //Player* target = handler->GetSession()->GetPlayer(); // self jic
+
+        if (!*args)
+            return false;
+
+        const char* entry;
+        entry = strtok((char*)args, " ");
+
+        const uint32 newEntry = uint32(atoi(entry));
+
+        if (target) {
+            target->SetAIAnimKitId(newEntry);
+        }
+        else {
+            handler->GetSession()->GetPlayer()->SetAIAnimKitId(newEntry);
+        }
+
+        return true;
+    }
+
+    static bool HandleSpellVisCommand(ChatHandler* handler, char const* args)
+    {
+        Unit* target = handler->getSelectedUnit();
+        //Player* target = handler->GetSession()->GetPlayer(); // self juic
+
+        if (!*args)
+            return false;
+
+        const char* entry;
+        entry = strtok((char*)args, " ");
+
+        const uint32 newEntry = uint32(atoi(entry));
+
+        if (target) {
+            target->SendPlaySpellVisual(target->GetPosition(), target->GetOrientation(), newEntry, 0, 0, 5000, false);
+        }
+        else {
+            handler->GetSession()->GetPlayer()->SendPlaySpellVisual(target->GetPosition(), target->GetOrientation(), newEntry, 0, 0, 5000, false);
+        }
+
+
+        return true;
+    }
+
+    static bool HandleUnSpellVisCommand(ChatHandler* handler, char const* args)
+    {
+        Unit* target = handler->getSelectedUnit();
+        //Player* target = handler->GetSession()->GetPlayer(); // self jic
+
+        if (!*args)
+            return false;
+
+        const char* entry;
+        entry = strtok((char*)args, " ");
+
+        const uint32 newEntry = uint32(atoi(entry));
+
+        if (target) {
+            target->SendCancelSpellVisual(newEntry);
+        }
+        else {
+            handler->GetSession()->GetPlayer()->SendCancelSpellVisual(newEntry);
+        }
+
 
         return true;
     }
