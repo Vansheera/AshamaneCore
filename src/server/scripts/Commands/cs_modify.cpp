@@ -35,6 +35,7 @@
 #include "SpellMgr.h"
 #include "SpellPackets.h"
 #include "WorldSession.h"
+#include "DatabaseEnv.h"
 
 class modify_commandscript : public CommandScript
 {
@@ -499,6 +500,23 @@ public:
             {
                 NotifyModification(handler, target, LANG_YOU_CHANGE_SIZE, LANG_YOURS_SIZE_CHANGED, Scale);
                 target->SetObjectScale(Scale);
+
+                QueryResult checkDB = WorldDatabase.PQuery("SELECT guid FROM player_perma WHERE guid = %u", handler->GetSession()->GetPlayer()->GetGUID().GetCounter());
+                if (!checkDB)
+                {
+                    PreparedStatement* getScale = WorldDatabase.GetPreparedStatement(WORLD_INS_PERMASCALE);
+                    getScale->setUInt64(0, handler->GetSession()->GetPlayer()->GetGUID().GetCounter());
+                    getScale->setFloat(1, Scale);
+                    WorldDatabase.Execute(getScale);
+                }
+                else
+                {
+                    PreparedStatement* updScale = WorldDatabase.GetPreparedStatement(WORLD_UPD_PERMASCALE);
+                    updScale->setFloat(0, Scale);
+                    updScale->setUInt64(1, handler->GetSession()->GetPlayer()->GetGUID().GetCounter());
+                    WorldDatabase.Execute(updScale);
+                }
+
                 return true;
             }
         }
@@ -835,6 +853,24 @@ public:
             return false;
 
         target->SetDisplayId(display_id);
+
+        QueryResult checkDB = WorldDatabase.PQuery("SELECT guid FROM player_perma WHERE guid = %u", handler->GetSession()->GetPlayer()->GetGUID().GetCounter());
+        if (!checkDB)
+        {
+            //Permamorph !
+            PreparedStatement* getDisplay = WorldDatabase.GetPreparedStatement(WORLD_INS_PERMAMORPH);
+            getDisplay->setUInt64(0, handler->GetSession()->GetPlayer()->GetGUID().GetCounter());
+            getDisplay->setUInt32(1, display_id);
+            WorldDatabase.Execute(getDisplay);
+
+        }
+        else
+        {
+            PreparedStatement* updDisplay = WorldDatabase.GetPreparedStatement(WORLD_UPD_PERMAMORPH);
+            updDisplay->setUInt32(0, display_id);
+            updDisplay->setUInt64(1, handler->GetSession()->GetPlayer()->GetGUID().GetCounter());
+            WorldDatabase.Execute(updDisplay);
+        }
 
         return true;
     }
