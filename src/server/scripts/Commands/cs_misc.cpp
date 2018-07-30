@@ -51,6 +51,7 @@
 #include "WeatherMgr.h"
 #include "World.h"
 #include "WorldSession.h"
+#include <G3D/Quat.h>
 
  // temporary hack until database includes are sorted out (don't want to pull in Windows.h everywhere from mysql.h)
 #ifdef GetClassName
@@ -127,6 +128,8 @@ public:
             { "animkit",          rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleAnimKitCommand,          "" },
             { "terrainswap",      rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleTerrainCommand,          "" },
             { "terraindel",       rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleRemoveTerrainCommand,    "" },
+            { "move",             rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleMoveCommand,             "" },
+            { "custom",           rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleBarberCommand,           "" },
         };
         return commandTable;
     }
@@ -1326,6 +1329,22 @@ public:
                 bonusListIDs.push_back(atoul(token));
         }
 
+        // Jok Custom
+        char const* transmog = strtok(NULL, " ");
+        uint32 transmogId = 0;
+        if (transmog)
+        {
+            transmogId = strtol(transmog, NULL, 10);
+
+        }
+
+        char const* enchant = strtok(NULL, " ");
+        uint32 enchantId = 0;
+        if (enchant)
+        {
+            enchantId = strtol(enchant, NULL, 10);
+        }
+
         Player* player = handler->GetSession()->GetPlayer();
         Player* playerTarget = handler->getSelectedPlayer();
         if (!playerTarget)
@@ -1365,7 +1384,7 @@ public:
             return false;
         }
 
-        Item* item = playerTarget->StoreNewItem(dest, itemId, true, GenerateItemRandomPropertyId(itemId), GuidSet(), 0, bonusListIDs);
+        Item* item = playerTarget->StoreNewItem(dest, itemId, true, GenerateItemRandomPropertyId(itemId), GuidSet(), 0, bonusListIDs, false, transmogId, enchantId);
 
         // remove binding (let GM give it to another player later)
         if (player == playerTarget)
@@ -3007,6 +3026,111 @@ public:
         }
         else
             return false;
+    }
+
+    static bool HandleMoveCommand(ChatHandler* handler, const char* args)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+
+        if (!*args)
+        {
+            return false;
+        }
+
+        char* temp = (char*)args;
+        char* str1 = strtok(temp, " ");
+        char* str2 = strtok(NULL, "\0");
+
+
+        float x = player->GetPositionX();
+        float y = player->GetPositionY();
+        float z = player->GetPositionZ();
+        float rot = player->GetOrientation();
+
+        player->SetCanFly(true);
+
+        if (strcmp(str1, "x") == 0)
+        {
+            if (str2 != NULL)
+            {
+                x = player->GetPositionX() + atof(str2);
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else if (strcmp(str1, "y") == 0)
+        {
+            if (str2 != NULL)
+            {
+                y = player->GetPositionY() + atof(str2);
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else if (strcmp(str1, "z") == 0)
+        {
+            if (str2 != NULL)
+            {
+                z = player->GetPositionZ() + atof(str2);
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            float nb = atof(str1);
+            x = player->GetPositionX() + (nb*cos((double)rot));
+            y = player->GetPositionY() + (nb*sin((double)rot));
+        }
+
+        WorldLocation position = WorldLocation(player->GetMapId(), x, y, z, rot);
+        player->TeleportTo(position);
+        handler->PSendSysMessage("Position X: %5.3f - Position Y: %5.3f - Position Z: %5.3f", x, y, z);
+        return true;
+    }
+
+    static bool HandleBarberCommand(ChatHandler* handler, char const* args)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        uint32 barberChairId = 241920;
+        uint32 barberSpawnTime = 400;
+
+        const GameObjectTemplate* objectInfo = sObjectMgr->GetGameObjectTemplate(barberChairId);
+
+        float x = float(player->GetPositionX());
+        float y = float(player->GetPositionY());
+        float z = float(player->GetPositionZ());
+        float ang = player->GetOrientation();
+        Map* map = player->GetMap();
+
+        G3D::Quat rotation = G3D::Matrix3::fromEulerAnglesZYX(player->GetOrientation(), 0.f, 0.f);
+
+        GameObject* object = player->SummonGameObject(barberChairId, x, y, z, ang, QuaternionData(rotation.x, rotation.y, rotation.z, rotation.w), barberSpawnTime);
+
+        player->SummonGameObject(barberChairId, x, y, z, ang, QuaternionData(rotation.x, rotation.y, rotation.z, rotation.w), barberSpawnTime);
+
+        object->DestroyForNearbyPlayers();
+        object->UpdateObjectVisibility();
+
+        if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(110851))
+        {
+            ObjectGuid castId = ObjectGuid::Create<HighGuid::Cast>(SPELL_CAST_SOURCE_NORMAL, player->GetMapId(), 110851, player->GetMap()->GenerateLowGuid<HighGuid::Cast>());
+            Aura::TryRefreshStackOrCreate(spellInfo, castId, MAX_EFFECT_MASK, player, player);
+        }
+
+        object->Use(handler->GetSession()->GetPlayer());
+
+        GameObject* go = player->FindNearestGameObjectOfType(GAMEOBJECT_TYPE_BARBER_CHAIR, 0.01f);
+
+        player->SetStandState(UnitStandStateType(UNIT_STAND_STATE_SIT_LOW_CHAIR + go->GetGOInfo()->barberChair.chairheight));
+
+        return true;
     }
 };
 
