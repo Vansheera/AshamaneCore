@@ -130,6 +130,7 @@ public:
             { "terraindel",       rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleRemoveTerrainCommand,    "" },
             { "move",             rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleMoveCommand,             "" },
             { "custom",           rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleBarberCommand,           "" },
+            { "skybox",           rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleSkyboxCommand,           "" },
         };
         return commandTable;
     }
@@ -3130,6 +3131,35 @@ public:
 
         player->SetStandState(UnitStandStateType(UNIT_STAND_STATE_SIT_LOW_CHAIR + go->GetGOInfo()->barberChair.chairheight));
 
+        return true;
+    }
+
+    static bool HandleSkyboxCommand(ChatHandler* handler, char const* args)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+
+        if (!*args)
+            return false;
+
+        char const* pId = strtok((char*)args, " ");
+
+        QueryResult results = WorldDatabase.PQuery("Select ID from light where ContinentID = %u", player->GetMapId());
+        if (!results)
+        {
+            return false;
+        }
+
+        Field* fields = results->Fetch();
+
+        uint32 replaceID = uint32(atoi(pId));
+        uint32 lightId = fields[0].GetUInt32();
+
+        WorldPacket data(SMSG_OVERRIDE_LIGHT, 12);
+        data << lightId;
+        data << replaceID;
+        data << 200;
+
+        handler->GetSession()->SendPacket(&data, true);
         return true;
     }
 };
