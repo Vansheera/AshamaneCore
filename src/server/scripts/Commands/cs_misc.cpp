@@ -125,6 +125,8 @@ public:
             { "spellviskit",      rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleSpellViskitCommand,      "" },
             { "unspellviskit",    rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleUnSpellViskitCommand,    "" },
             { "animkit",          rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleAnimKitCommand,          "" },
+            { "terrainswap",      rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleTerrainCommand,          "" },
+            { "terraindel",       rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleRemoveTerrainCommand,    "" },
         };
         return commandTable;
     }
@@ -2944,6 +2946,67 @@ public:
 
 
         return true;
+    }
+
+    static bool HandleTerrainCommand(ChatHandler* handler, char const* args)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        uint32 mapId = player->GetMapId();
+
+        if (!*args)
+            return false;
+
+        char const* tId = strtok((char*)args, " ");
+        uint32 terrainMap = uint32(atoi(tId));
+
+        QueryResult checkAlready = WorldDatabase.PQuery("SELECT MapId, TerrainSwapMap FROM terrain_swap_defaults WHERE MapId = %u AND TerrainSwapMap = %u", mapId, terrainMap);
+        if (checkAlready)
+            return false;
+
+        PreparedStatement* swap = WorldDatabase.GetPreparedStatement(WORLD_INS_PHASE_TERRAIN);
+        swap->setUInt32(0, mapId);
+        swap->setUInt32(1, terrainMap);
+        WorldDatabase.Execute(swap);
+        sObjectMgr->LoadPhases();
+
+        if (!player->GetPhaseShift().HasVisibleMapId(terrainMap))
+            PhasingHandler::AddVisibleMapId(player, terrainMap);
+
+        PhasingHandler::SendToPlayer(player);
+
+        return true;
+    }
+
+    static bool HandleRemoveTerrainCommand(ChatHandler* handler, char const* args)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        uint32 mapId = player->GetMapId();
+
+        if (!*args)
+            return false;
+
+        char const* tId = strtok((char*)args, " ");
+        uint32 terrainMap = uint32(atoi(tId));
+
+        QueryResult checkAlready = WorldDatabase.PQuery("SELECT MapId, TerrainSwapMap FROM terrain_swap_defaults WHERE MapId = %u AND TerrainSwapMap = %u", mapId, terrainMap);
+        if (checkAlready)
+        {
+            PreparedStatement* swap = WorldDatabase.GetPreparedStatement(WORLD_DEL_PHASE_TERRAIN);
+            swap->setUInt32(0, mapId);
+            swap->setUInt32(1, terrainMap);
+            WorldDatabase.Execute(swap);
+
+            sObjectMgr->LoadPhases();
+
+            if (player->GetPhaseShift().HasVisibleMapId(terrainMap))
+                PhasingHandler::RemoveVisibleMapId(player, terrainMap);
+
+            PhasingHandler::SendToPlayer(player);
+
+            return true;
+        }
+        else
+            return false;
     }
 };
 

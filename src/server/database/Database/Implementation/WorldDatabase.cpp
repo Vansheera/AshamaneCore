@@ -99,6 +99,8 @@ void WorldDatabaseConnection::DoPrepareStatements()
     PrepareStatement(WORLD_UPD_PERMAMORPH, "UPDATE player_perma SET displayId = ? WHERE guid = ?", CONNECTION_ASYNC);
     PrepareStatement(WORLD_INS_PERMASCALE, "INSERT INTO player_perma (guid, scale) VALUES (?,?)", CONNECTION_ASYNC);
     PrepareStatement(WORLD_UPD_PERMASCALE, "UPDATE player_perma SET scale = ? WHERE guid = ?", CONNECTION_ASYNC);
+    PrepareStatement(WORLD_INS_PHASE_TERRAIN, "INSERT INTO terrain_swap_defaults (MapId, TerrainSwapMap) VALUES (?,?)", CONNECTION_ASYNC);
+    PrepareStatement(WORLD_DEL_PHASE_TERRAIN, "DELETE FROM terrain_swap_defaults WHERE MapId = ? AND TerrainSwapMap = ?", CONNECTION_ASYNC);
 }
 
 WorldDatabaseConnection::WorldDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection(connInfo)
