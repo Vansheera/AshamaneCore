@@ -101,6 +101,15 @@ void WorldDatabaseConnection::DoPrepareStatements()
     PrepareStatement(WORLD_UPD_PERMASCALE, "UPDATE player_perma SET scale = ? WHERE guid = ?", CONNECTION_ASYNC);
     PrepareStatement(WORLD_INS_PHASE_TERRAIN, "INSERT INTO terrain_swap_defaults (MapId, TerrainSwapMap) VALUES (?,?)", CONNECTION_ASYNC);
     PrepareStatement(WORLD_DEL_PHASE_TERRAIN, "DELETE FROM terrain_swap_defaults WHERE MapId = ? AND TerrainSwapMap = ?", CONNECTION_ASYNC);
+
+    PrepareStatement(WORLD_INS_SET_ANIM, "INSERT INTO creature_addon(guid, emote) VALUES (?, ?)", CONNECTION_ASYNC);
+    PrepareStatement(WORLD_UPD_SET_ANIM, "UPDATE creature_addon SET emote = ? WHERE guid = ?", CONNECTION_ASYNC);
+    PrepareStatement(WORLD_INS_SET_AURA, "INSERT INTO creature_addon(guid, auras) VALUES (?, ?)", CONNECTION_ASYNC);
+    PrepareStatement(WORLD_UPD_SET_AURA, "UPDATE creature_addon SET auras = ? WHERE guid = ?", CONNECTION_ASYNC);
+    PrepareStatement(WORLD_UPD_SET_MOUNT, "UPDATE creature_addon SET mount = ? WHERE guid = ?", CONNECTION_ASYNC);
+    PrepareStatement(WORLD_INS_SET_MOUNT, "INSERT INTO creature_addon(guid, mount) VALUES (?, ?)", CONNECTION_ASYNC);
+    PrepareStatement(WORLD_UPD_SET_ANIMKIT, "UPDATE creature_addon SET aiAnimKit = ? WHERE guid = ?", CONNECTION_ASYNC);
+    PrepareStatement(WORLD_INS_SET_ANIMKIT, "INSERT INTO creature_addon(guid, aiAnimKit) VALUES (?, ?)", CONNECTION_ASYNC);
 }
 
 WorldDatabaseConnection::WorldDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection(connInfo)
