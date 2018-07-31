@@ -11489,7 +11489,7 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16 &dest, Item* pItem, bool
                 // May be here should be more stronger checks; STUNNED checked
                 // ROOT, CONFUSED, DISTRACTED, FLEEING this needs to be checked.
                 if (HasUnitState(UNIT_STATE_STUNNED))
-                    return EQUIP_ERR_OK;
+                    return EQUIP_ERR_GENERIC_STUNNED;
 
                 // do not allow equipping gear except weapons, offhands, projectiles, relics in
                 // - combat
@@ -11497,18 +11497,18 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16 &dest, Item* pItem, bool
                 if (!pProto->CanChangeEquipStateInCombat())
                 {
                     if (IsInCombat())
-                        return EQUIP_ERR_OK;
+                        return EQUIP_ERR_NOT_IN_COMBAT;
 
                     if (Battleground* bg = GetBattleground())
                         if (bg->isArena() && bg->GetStatus() == STATUS_IN_PROGRESS)
-                            return EQUIP_ERR_OK;
+                            return EQUIP_ERR_NOT_DURING_ARENA_MATCH;
                 }
 
                 if (IsInCombat() && (pProto->GetClass() == ITEM_CLASS_WEAPON || pProto->GetInventoryType() == INVTYPE_RELIC) && m_weaponChangeTimer != 0)
-                    return EQUIP_ERR_OK;         // maybe exist better err
+                    return EQUIP_ERR_CLIENT_LOCKED_OUT;         // maybe exist better err
 
                 if (IsNonMeleeSpellCast(false))
-                    return EQUIP_ERR_OK;
+                    return EQUIP_ERR_CLIENT_LOCKED_OUT;
             }
 
             ScalingStatDistributionEntry const* ssd = pItem->GetScalingStatDistribution() ? sScalingStatDistributionStore.LookupEntry(pItem->GetScalingStatDistribution()) : 0;
@@ -11518,14 +11518,14 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16 &dest, Item* pItem, bool
 
             uint8 eslot = FindEquipSlot(pProto, slot, swap);
             if (eslot == NULL_SLOT)
-                return EQUIP_ERR_OK;
+                return EQUIP_ERR_NOT_EQUIPPABLE;
 
             res = CanUseItem(pItem, not_loading);
             if (res != EQUIP_ERR_OK)
                 return res;
 
             if (!swap && GetItemByPos(INVENTORY_SLOT_BAG_0, eslot))
-                return EQUIP_ERR_OK;
+                return EQUIP_ERR_NO_SLOT_AVAILABLE;
 
             // if we are swapping 2 equiped items, CanEquipUniqueItem check
             // should ignore the item we are trying to swap, and not the
@@ -11534,24 +11534,24 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16 &dest, Item* pItem, bool
             uint8 ignore = uint8(NULL_SLOT);
             switch (eslot)
             {
-                case EQUIPMENT_SLOT_MAINHAND:
-                    ignore = EQUIPMENT_SLOT_OFFHAND;
-                    break;
-                case EQUIPMENT_SLOT_OFFHAND:
-                    ignore = EQUIPMENT_SLOT_MAINHAND;
-                    break;
-                case EQUIPMENT_SLOT_FINGER1:
-                    ignore = EQUIPMENT_SLOT_FINGER2;
-                    break;
-                case EQUIPMENT_SLOT_FINGER2:
-                    ignore = EQUIPMENT_SLOT_FINGER1;
-                    break;
-                case EQUIPMENT_SLOT_TRINKET1:
-                    ignore = EQUIPMENT_SLOT_TRINKET2;
-                    break;
-                case EQUIPMENT_SLOT_TRINKET2:
-                    ignore = EQUIPMENT_SLOT_TRINKET1;
-                    break;
+            case EQUIPMENT_SLOT_MAINHAND:
+                ignore = EQUIPMENT_SLOT_OFFHAND;
+                break;
+            case EQUIPMENT_SLOT_OFFHAND:
+                ignore = EQUIPMENT_SLOT_MAINHAND;
+                break;
+            case EQUIPMENT_SLOT_FINGER1:
+                ignore = EQUIPMENT_SLOT_FINGER2;
+                break;
+            case EQUIPMENT_SLOT_FINGER2:
+                ignore = EQUIPMENT_SLOT_FINGER1;
+                break;
+            case EQUIPMENT_SLOT_TRINKET1:
+                ignore = EQUIPMENT_SLOT_TRINKET2;
+                break;
+            case EQUIPMENT_SLOT_TRINKET2:
+                ignore = EQUIPMENT_SLOT_TRINKET1;
+                break;
             }
 
             if (ignore == uint8(NULL_SLOT) || pItem != GetItemByPos(INVENTORY_SLOT_BAG_0, ignore))
@@ -11569,8 +11569,8 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16 &dest, Item* pItem, bool
                             if (ItemTemplate const* pBagProto = pBag->GetTemplate())
                                 if (pBagProto->GetClass() == pProto->GetClass() && (!swap || pBag->GetSlot() != eslot))
                                     return (pBagProto->GetSubClass() == ITEM_SUBCLASS_AMMO_POUCH)
-                                        ? EQUIP_ERR_ONLY_ONE_AMMO
-                                        : EQUIP_ERR_ONLY_ONE_QUIVER;
+                                    ? EQUIP_ERR_ONLY_ONE_AMMO
+                                    : EQUIP_ERR_ONLY_ONE_QUIVER;
 
             uint32 type = pProto->GetInventoryType();
 
@@ -11605,10 +11605,10 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16 &dest, Item* pItem, bool
                 if (eslot == EQUIPMENT_SLOT_OFFHAND)
                 {
                     if (!CanTitanGrip())
-                        return EQUIP_ERR_OK;
+                        return EQUIP_ERR_NOT_EQUIPPABLE;
                 }
                 else if (eslot != EQUIPMENT_SLOT_MAINHAND)
-                    return EQUIP_ERR_OK;
+                    return EQUIP_ERR_NOT_EQUIPPABLE;
 
                 if (!CanTitanGrip())
                 {
@@ -11924,10 +11924,7 @@ InventoryResult Player::CanUseItem(Item* pItem, bool not_loading) const
         if (pProto)
         {
             if (pItem->IsBindedNotWith(this))
-                return EQUIP_ERR_OK;
-
-            if (getLevel() < pItem->GetRequiredLevel())
-                return EQUIP_ERR_OK;
+                return EQUIP_ERR_NOT_OWNER;
 
             InventoryResult res = CanUseItem(pProto);
             if (res != EQUIP_ERR_OK)
@@ -11935,7 +11932,7 @@ InventoryResult Player::CanUseItem(Item* pItem, bool not_loading) const
 
             if (pItem->GetSkill() != 0)
             {
-                bool allowEquip = false;
+                bool allowEquip = true;
                 uint32 itemSkill = pItem->GetSkill();
                 // Armor that is binded to account can "morph" from plate to mail, etc. if skill is not learned yet.
                 if (pProto->GetQuality() == ITEM_QUALITY_HEIRLOOM && pProto->GetClass() == ITEM_CLASS_ARMOR && !HasSkill(itemSkill))
@@ -11946,24 +11943,24 @@ InventoryResult Player::CanUseItem(Item* pItem, bool not_loading) const
 
                     switch (getClass())
                     {
-                        case CLASS_HUNTER:
-                        case CLASS_SHAMAN:
-                            allowEquip = (itemSkill == SKILL_MAIL);
-                            break;
-                        case CLASS_PALADIN:
-                        case CLASS_WARRIOR:
-                            allowEquip = (itemSkill == SKILL_PLATE_MAIL);
-                            break;
+                    case CLASS_HUNTER:
+                    case CLASS_SHAMAN:
+                        allowEquip = (itemSkill == SKILL_MAIL);
+                        break;
+                    case CLASS_PALADIN:
+                    case CLASS_WARRIOR:
+                        allowEquip = (itemSkill == SKILL_PLATE_MAIL);
+                        break;
                     }
                 }
                 if (!allowEquip && GetSkillValue(itemSkill) == 0)
-                    return EQUIP_ERR_OK;
+                    return EQUIP_ERR_PROFICIENCY_NEEDED;
             }
 
             return EQUIP_ERR_OK;
         }
     }
-    return EQUIP_ERR_OK;
+    return EQUIP_ERR_ITEM_NOT_FOUND;
 }
 
 InventoryResult Player::CanUseItem(ItemTemplate const* proto) const
@@ -11971,7 +11968,7 @@ InventoryResult Player::CanUseItem(ItemTemplate const* proto) const
     // Used by group, function GroupLoot, to know if a prototype can be used by a player
 
     if (!proto)
-        return EQUIP_ERR_OK;
+        return EQUIP_ERR_ITEM_NOT_FOUND;
 
     if (proto->GetFlags2() & ITEM_FLAG2_INTERNAL_ITEM)
         return EQUIP_ERR_OK;
