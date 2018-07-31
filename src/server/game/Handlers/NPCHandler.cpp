@@ -49,6 +49,11 @@
 
 void WorldSession::HandleTabardVendorActivateOpcode(WorldPackets::NPC::Hello& packet)
 {
+#ifndef DISABLE_DRESSNPCS_CORESOUNDS
+    if (packet.Unit.IsAnyTypeCreature())
+        if (Creature* creature = _player->GetMap()->GetCreature(packet.Unit))
+            creature->SendMirrorSound(_player, 0);
+#endif
     Creature* unit = GetPlayer()->GetNPCIfCanInteractWith(packet.Unit, UNIT_NPC_FLAG_TABARDDESIGNER);
     if (!unit)
     {
@@ -79,6 +84,11 @@ void WorldSession::SendShowMailBox(ObjectGuid guid)
 
 void WorldSession::HandleTrainerListOpcode(WorldPackets::NPC::Hello& packet)
 {
+#ifndef DISABLE_DRESSNPCS_CORESOUNDS
+    if (packet.Unit.IsAnyTypeCreature())
+        if (Creature* creature = _player->GetMap()->GetCreature(packet.Unit))
+            creature->SendMirrorSound(_player, 0);
+#endif
     Creature* npc = GetPlayer()->GetNPCIfCanInteractWith(packet.Unit, UNIT_NPC_FLAG_TRAINER);
     if (!npc)
     {
@@ -317,6 +327,11 @@ void WorldSession::HandleTrainerBuySpellOpcodeLegacy(WorldPackets::NPC::TrainerB
 
 void WorldSession::HandleGossipHelloOpcode(WorldPackets::NPC::Hello& packet)
 {
+#ifndef DISABLE_DRESSNPCS_CORESOUNDS
+    if (packet.Unit.IsAnyTypeCreature())
+        if (Creature* creature = _player->GetMap()->GetCreature(packet.Unit))
+            creature->SendMirrorSound(_player, 0);
+#endif
     Creature* unit = GetPlayer()->GetNPCIfCanInteractWith(packet.Unit, UNIT_NPC_FLAG_GOSSIP);
     if (!unit)
     {
@@ -524,6 +539,11 @@ void WorldSession::SendBindPoint(Creature* npc)
 
 void WorldSession::HandleRequestStabledPets(WorldPackets::NPC::RequestStabledPets& packet)
 {
+#ifndef DISABLE_DRESSNPCS_CORESOUNDS
+    if (packet.StableMaster.IsAnyTypeCreature())
+        if (Creature* creature = _player->GetMap()->GetCreature(packet.StableMaster))
+            creature->SendMirrorSound(_player, 0);
+#endif
     if (!CheckStableMaster(packet.StableMaster))
         return;
 
