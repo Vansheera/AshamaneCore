@@ -18186,20 +18186,20 @@ bool Player::LoadFromDB(ObjectGuid guid, SQLQueryHolder *holder)
     SetUInt32Value(PLAYER_FLAGS_EX, fields[21].GetUInt32());
     SetInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX, fields[54].GetUInt32());
 
-    if (!ValidateAppearance(
-        fields[3].GetUInt8(), // race
-        fields[4].GetUInt8(), // class
-        gender,
-        GetByteValue(PLAYER_BYTES, PLAYER_BYTES_OFFSET_HAIR_STYLE_ID),
-        GetByteValue(PLAYER_BYTES, PLAYER_BYTES_OFFSET_HAIR_COLOR_ID),
-        GetByteValue(PLAYER_BYTES, PLAYER_BYTES_OFFSET_FACE_ID),
-        GetByteValue(PLAYER_BYTES_2, PLAYER_BYTES_2_OFFSET_FACIAL_STYLE),
-        GetByteValue(PLAYER_BYTES, PLAYER_BYTES_OFFSET_SKIN_ID),
-        customDisplay))
-    {
-        TC_LOG_ERROR("entities.player", "Player::LoadFromDB: Player (%s) has wrong Appearance values (Hair/Skin/Color), can't load.", guid.ToString().c_str());
-        return false;
-    }
+    //if (!ValidateAppearance(
+    //    fields[3].GetUInt8(), // race
+    //    fields[4].GetUInt8(), // class
+    //    gender,
+    //    GetByteValue(PLAYER_BYTES, PLAYER_BYTES_OFFSET_HAIR_STYLE_ID),
+    //    GetByteValue(PLAYER_BYTES, PLAYER_BYTES_OFFSET_HAIR_COLOR_ID),
+    //    GetByteValue(PLAYER_BYTES, PLAYER_BYTES_OFFSET_FACE_ID),
+    //    GetByteValue(PLAYER_BYTES_2, PLAYER_BYTES_2_OFFSET_FACIAL_STYLE),
+    //    GetByteValue(PLAYER_BYTES, PLAYER_BYTES_OFFSET_SKIN_ID),
+    //    customDisplay))
+    //{
+    //    TC_LOG_ERROR("entities.player", "Player::LoadFromDB: Player (%s) has wrong Appearance values (Hair/Skin/Color), can't load.", guid.ToString().c_str());
+    //    return false;
+    //}
 
     // set which actionbars the client has active - DO NOT REMOVE EVER AGAIN (can be changed though, if it does change fieldwise)
     SetByteValue(PLAYER_FIELD_BYTES, PLAYER_FIELD_BYTES_OFFSET_ACTION_BAR_TOGGLES, fields[68].GetUInt8());
