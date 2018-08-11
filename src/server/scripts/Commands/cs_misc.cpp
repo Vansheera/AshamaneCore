@@ -131,6 +131,7 @@ public:
             { "move",             rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleMoveCommand,             "" },
             { "custom",           rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleBarberCommand,           "" },
             { "skybox",           rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleSkyboxCommand,           "" },
+            { "rand",             rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleRandCustomCommand,       "" },
         };
         return commandTable;
     }
@@ -3160,6 +3161,74 @@ public:
         data << 200;
 
         handler->GetSession()->SendPacket(&data, true);
+        return true;
+    }
+
+    static bool HandleRandCustomCommand(ChatHandler* handler, char const* args)
+    {
+        char* temp = (char*)args;
+        char* minArg = strtok(temp, " ");
+        char* maxArg = strtok(NULL, " ");
+        char* modifierArg = strtok(NULL, " ");
+        char* masterArg = strtok(NULL, " ");
+
+        uint32 minRand = 1;
+        uint32 maxRand = 100;
+        uint32 modifierRand = 0;
+        uint32 roll;
+        uint32 master = 0;
+
+        Player* player = handler->GetSession()->GetPlayer();
+
+        //If FirstRand and SecondRand is NULL put default values
+        //if (minArg == NULL && maxArg == NULL && modifierArg == NULL)
+        //{
+        //    minRand = 1;
+        //    maxRand = 100;
+        //    modifierRand = 0;
+        //}
+
+        //Get FirstRand
+        if (minArg != NULL)
+        {
+            minRand = atoi(minArg);
+        }
+
+        //Get SecondRand
+        if (maxArg != NULL)
+        {
+            maxRand = atoi(maxArg);
+        }
+
+        if (modifierArg != NULL)
+        {
+            modifierRand = atoi(modifierArg);
+        }
+
+        if (masterArg != NULL)
+        {
+            master = atoi(masterArg);
+        }
+
+        if (minRand <= 0 || minRand > maxRand || maxRand > 9999)
+        {
+            handler->SendSysMessage("Données invalides, veuillez vérifier votre rand.");
+            return false;
+        }
+
+        if (masterArg != 0 && handler->GetSession()->GetSecurity() >= 3)
+        {
+            roll = master;
+        }
+        else
+        {
+            roll = urand(minRand, maxRand) + modifierRand;
+        }
+
+        std::string playerName = player->GetName();
+        char msg[255];
+        sprintf(msg, "%s obient un %u (%u - %u + %u).", playerName.c_str(), roll, minRand, maxRand, modifierRand);
+        player->Talk(msg, CHAT_MSG_SYSTEM, LANG_UNIVERSAL, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_TEXTEMOTE), nullptr);
         return true;
     }
 };
