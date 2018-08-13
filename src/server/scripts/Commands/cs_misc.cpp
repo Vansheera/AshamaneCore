@@ -3182,6 +3182,7 @@ public:
         uint32 maxRand = 100;
         uint32 modifierRand = 0;
         uint32 roll;
+        uint32 rollMath;
         uint32 master = 0;
 
         Player* player = handler->GetSession()->GetPlayer();
@@ -3212,7 +3213,7 @@ public:
             }
             else
             {
-                modifierTypeArg = NULL;
+                modifierTypeArg = "+";
                 modifierNbArg = modifierArg;
             }
 
@@ -3236,34 +3237,41 @@ public:
         }
         else
         {
+            rollMath = urand(minRand, maxRand);
+
             if (modifierTypeArg == "+")
             {
-                roll = urand(minRand, maxRand) + modifierRand;
+                roll = rollMath + modifierRand;
             }
             else if (modifierTypeArg == "-")
             {
-                roll = urand(minRand, maxRand) - modifierRand;
+                roll = rollMath - modifierRand;
             }
-            else if (modifierTypeArg == NULL)
+            else
             {
-                roll = urand(minRand, maxRand) + modifierRand;
+                roll = rollMath + modifierRand;
+            }
+
+            if (roll > 9999 || roll <= 0 || roll < minRand)
+            {
+                roll = minRand;
             }
         }
 
         std::string playerName = player->GetName();
         char msg[255];
 
-        if (modifierTypeArg == "+")
+        if (modifierTypeArg == "+" && modifierRand > 0)
         {
-            sprintf(msg, "%s obient un %u (%u - %u + %u).", playerName.c_str(), roll, minRand, maxRand, modifierRand);
+            sprintf(msg, "%s obtient un %u (%u - %u + %u).", playerName.c_str(), roll, minRand, maxRand, modifierRand);
         }
-        else if (modifierTypeArg == "-")
+        else if (modifierTypeArg == "-" && modifierRand > 0)
         {
-            sprintf(msg, "%s obient un %u (%u - %u - %u).", playerName.c_str(), roll, minRand, maxRand, modifierRand);
+            sprintf(msg, "%s obtient un %u (%u - %u - %u).", playerName.c_str(), roll, minRand, maxRand, modifierRand);
         }
-        else if (modifierTypeArg == NULL)
+        else
         {
-            sprintf(msg, "%s obient un %u (%u - %u + %u).", playerName.c_str(), roll, minRand, maxRand, modifierRand);
+            sprintf(msg, "%s obtient un %u (%u - %u).", playerName.c_str(), roll, minRand, maxRand);
         }
 
         player->Talk(msg, CHAT_MSG_SYSTEM, LANG_UNIVERSAL, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_TEXTEMOTE), nullptr);
@@ -3353,16 +3361,6 @@ public:
         else
             handler->PSendSysMessage("%s est a %3.2f m de vous.", targetName, distance);
         return true;
-    }
-
-    static bool HandleChangeName(ChatHandler* handler, char const* args)
-    {
-        if (!*args)
-            return false;
-
-        char* argName = strtok((char*)args, "");
-
-        handler->PSendSysMessage(argName);
     }
 
     static bool HandleNoclipCommand(ChatHandler* handler, char const* args) //Need some work on it
