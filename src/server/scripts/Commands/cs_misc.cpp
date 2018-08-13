@@ -135,6 +135,7 @@ public:
             { "noclip",           rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleNoclipCommand,           "" },
             { "rotate",           rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleRotatePlayerCommand,     "" },
             { "distance",         rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleDistanceCommand,         "" },
+            { "name",             rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleChangeName,              "" },
         };
         return commandTable;
     }
@@ -3173,6 +3174,8 @@ public:
         char* minArg = strtok(temp, " ");
         char* maxArg = strtok(NULL, " ");
         char* modifierArg = strtok(NULL, " ");
+        char* modifierTypeArg;
+        char* modifierNbArg;
         char* masterArg = strtok(NULL, " ");
 
         uint32 minRand = 1;
@@ -3182,14 +3185,6 @@ public:
         uint32 master = 0;
 
         Player* player = handler->GetSession()->GetPlayer();
-
-        //If FirstRand and SecondRand is NULL put default values
-        //if (minArg == NULL && maxArg == NULL && modifierArg == NULL)
-        //{
-        //    minRand = 1;
-        //    maxRand = 100;
-        //    modifierRand = 0;
-        //}
 
         //Get FirstRand
         if (minArg != NULL)
@@ -3205,7 +3200,27 @@ public:
 
         if (modifierArg != NULL)
         {
-            modifierRand = atoi(modifierArg);
+            if (strchr(modifierArg, '+'))
+            {
+                modifierTypeArg = "+";
+                modifierNbArg = strtok(modifierArg, modifierTypeArg);
+            }
+            else if (strchr(modifierArg, '-'))
+            {
+                modifierTypeArg = "-";
+                modifierNbArg = strtok(modifierArg, modifierTypeArg);
+            }
+            else
+            {
+                modifierTypeArg = NULL;
+                modifierNbArg = modifierArg;
+            }
+
+            handler->SendSysMessage(modifierArg); //Debug
+            handler->SendSysMessage(modifierNbArg); //Debug
+            handler->SendSysMessage(modifierTypeArg); //Debug
+
+            modifierRand = atoi(modifierNbArg);
         }
 
         if (masterArg != NULL)
@@ -3225,12 +3240,36 @@ public:
         }
         else
         {
-            roll = urand(minRand, maxRand) + modifierRand;
+            if (modifierTypeArg == "+")
+            {
+                roll = urand(minRand, maxRand) + modifierRand;
+            }
+            else if (modifierTypeArg == "-")
+            {
+                roll = urand(minRand, maxRand) - modifierRand;
+            }
+            else if (modifierTypeArg == NULL)
+            {
+                roll = urand(minRand, maxRand) + modifierRand;
+            }
         }
 
         std::string playerName = player->GetName();
         char msg[255];
-        sprintf(msg, "%s obient un %u (%u - %u + %u).", playerName.c_str(), roll, minRand, maxRand, modifierRand);
+
+        if (modifierTypeArg == "+")
+        {
+            sprintf(msg, "%s obient un %u (%u - %u + %u).", playerName.c_str(), roll, minRand, maxRand, modifierRand);
+        }
+        else if (modifierTypeArg == "-")
+        {
+            sprintf(msg, "%s obient un %u (%u - %u - %u).", playerName.c_str(), roll, minRand, maxRand, modifierRand);
+        }
+        else if (modifierTypeArg == NULL)
+        {
+            sprintf(msg, "%s obient un %u (%u - %u + %u).", playerName.c_str(), roll, minRand, maxRand, modifierRand);
+        }
+
         player->Talk(msg, CHAT_MSG_SYSTEM, LANG_UNIVERSAL, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_TEXTEMOTE), nullptr);
         return true;
     }
@@ -3318,6 +3357,16 @@ public:
         else
             handler->PSendSysMessage("%s est a %3.2f m de vous.", targetName, distance);
         return true;
+    }
+
+    static bool HandleChangeName(ChatHandler* handler, char const* args)
+    {
+        if (!*args)
+            return false;
+
+        char* argName = strtok((char*)args, "");
+
+        handler->PSendSysMessage(argName);
     }
 
     static bool HandleNoclipCommand(ChatHandler* handler, char const* args) //Need some work on it
