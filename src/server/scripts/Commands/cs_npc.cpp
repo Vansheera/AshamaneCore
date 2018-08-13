@@ -701,10 +701,21 @@ public:
     }
 
     //npc follow handling
-    static bool HandleNpcFollowCommand(ChatHandler* handler, char const* /*args*/)
+    static bool HandleNpcFollowCommand(ChatHandler* handler, char const* args)
     {
         Player* player = handler->GetSession()->GetPlayer();
         Creature* creature = handler->getSelectedCreature();
+        float distance = PET_FOLLOW_DIST; // 1.0 (3,60 meter ingame)
+        float angle = static_cast<float>(M_PI / 2); // Left
+
+        char* arg1 = strtok((char*)args, " ");
+        char* arg2 = strtok((char*)nullptr, "");
+
+        if (arg1)
+            distance = ((float)atoi(arg1));
+
+        if (arg2)
+            angle = ((float)atoi(arg2))*(M_PI / 180); // to deg
 
         if (!creature)
         {
@@ -714,7 +725,8 @@ public:
         }
 
         // Follow player - Using pet's default dist and angle
-        creature->GetMotionMaster()->MoveFollow(player, PET_FOLLOW_DIST, creature->GetFollowAngle());
+        //creature->GetMotionMaster()->MoveFollow(player, PET_FOLLOW_DIST, creature->GetFollowAngle());
+        creature->GetMotionMaster()->MoveFollow(player, distance, angle);
 
         handler->PSendSysMessage(LANG_CREATURE_FOLLOW_YOU_NOW, creature->GetName().c_str());
         return true;

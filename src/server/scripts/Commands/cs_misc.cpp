@@ -82,7 +82,7 @@ public:
             { "dev",              rbac::RBAC_PERM_COMMAND_DEV,              false, &HandleDevCommand,              "" },
             { "die",              rbac::RBAC_PERM_COMMAND_DIE,              false, &HandleDieCommand,              "" },
             { "dismount",         rbac::RBAC_PERM_COMMAND_DISMOUNT,         false, &HandleDismountCommand,         "" },
-            { "distance",         rbac::RBAC_PERM_COMMAND_DISTANCE,         false, &HandleGetDistanceCommand,      "" },
+            //{ "distance",         rbac::RBAC_PERM_COMMAND_DISTANCE,         false, &HandleGetDistanceCommand,      "" },
             { "freeze",           rbac::RBAC_PERM_COMMAND_FREEZE,           false, &HandleFreezeCommand,           "" },
             { "gps",              rbac::RBAC_PERM_COMMAND_GPS,              false, &HandleGPSCommand,              "" },
             { "guid",             rbac::RBAC_PERM_COMMAND_GUID,             false, &HandleGUIDCommand,             "" },
@@ -132,6 +132,9 @@ public:
             { "custom",           rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleBarberCommand,           "" },
             { "skybox",           rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleSkyboxCommand,           "" },
             { "rand",             rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleRandCustomCommand,       "" },
+            { "noclip",           rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleNoclipCommand,           "" },
+            { "rotate",           rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleRotatePlayerCommand,     "" },
+            { "distance",         rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleDistanceCommand,         "" },
         };
         return commandTable;
     }
@@ -3229,6 +3232,106 @@ public:
         char msg[255];
         sprintf(msg, "%s obient un %u (%u - %u + %u).", playerName.c_str(), roll, minRand, maxRand, modifierRand);
         player->Talk(msg, CHAT_MSG_SYSTEM, LANG_UNIVERSAL, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_TEXTEMOTE), nullptr);
+        return true;
+    }
+
+    static bool HandleRotatePlayerCommand(ChatHandler* handler, char const* args)
+    {
+        if (!*args)
+            return false;
+
+        char* argOrientation = strtok((char*)args, " ");
+
+        Player* player = handler->GetSession()->GetPlayer();
+        float posX = player->GetPositionX();
+        float posY = player->GetPositionY();
+        float posZ = player->GetPositionZ();
+        float orientation = atoi(argOrientation);
+
+        uint32 mapId = player->GetMapId();
+
+        player->TeleportTo(mapId, posX, posY, posZ, orientation);
+        return true;
+    }
+
+    static bool HandleDistanceCommand(ChatHandler* handler, char const* args)
+    {
+        //Phase 1 : recherche du type de la cible : gob, npc ou player ?
+        WorldObject* target;
+        std::string targetName;
+        if (!*args)
+        {
+            //Partie ciblage classique, si il y a pas d'args
+            target = handler->getSelectedObject();
+            if (!target)
+            {
+                handler->SendSysMessage("Vous n'avez pas de GUID de gob, de cible ou de nom de joueur. Veuillez réctifier votre demande.");
+                return false;
+            }
+            targetName = target->GetName();
+        }
+        else
+        {
+            //Partie "joueur"
+            std::string nameTargetPlayer = (char*)args;
+            target = ObjectAccessor::FindPlayerByName(nameTargetPlayer);
+            if (!target)
+            {
+                //Partie "gob"
+                char* id = handler->extractKeyFromLink((char*)args, "Hgameobject");
+                if (!id)
+                    return false;
+
+                ObjectGuid::LowType guidLow = strtoull(id, nullptr, 10);
+                if (!guidLow)
+                    return false;
+
+                GameObject* object = NULL;
+                if (GameObjectData const* gameObjectData = sObjectMgr->GetGOData(guidLow))
+                    object = handler->GetObjectFromPlayerMapByDbGuid(guidLow);
+
+                if (!object)
+                {
+                    handler->PSendSysMessage("Le nom du joueur, ou le GUID du gob est invalide.");
+                    return false;
+                }
+                targetName = object->GetGOInfo()->name.c_str();
+                target = object;
+            }
+            else
+                targetName = target->GetName();
+        }
+        double playerX = (trunc((handler->GetSession()->GetPlayer()->GetPositionX()) * 10 * 0.9144)) / 10;
+        double playerY = (trunc((handler->GetSession()->GetPlayer()->GetPositionY()) * 10 * 0.9144)) / 10;
+        double playerZ = (trunc((handler->GetSession()->GetPlayer()->GetPositionZ()) * 10 * 0.9144)) / 10;
+        double targetX = (trunc((target->GetPositionX()) * 10 * 0.9144)) / 10;
+        double targetY = (trunc((target->GetPositionY()) * 10 * 0.9144)) / 10;
+        double targetZ = (trunc((target->GetPositionZ()) * 10 * 0.9144)) / 10;
+
+        double distanceFull = sqrt((pow((playerX - targetX), 2)) + (pow((playerY - targetY), 2)) + (pow((playerZ - targetZ), 2)));
+        double distance = (trunc(distanceFull * 10)) / 10;
+
+        if (distance > 300)
+            handler->SendSysMessage("La distance entre vous est votre cible est bien trop importante. Veuillez vous rapprocher.");
+        else if (distance < 1)
+            handler->PSendSysMessage("%s est a %2.0f cm de vous.", targetName, distance);
+        else
+            handler->PSendSysMessage("%s est a %3.2f m de vous.", targetName, distance);
+        return true;
+    }
+
+    static bool HandleNoclipCommand(ChatHandler* handler, char const* args) //Need some work on it
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+
+        WorldPacket data;
+        data.Initialize(SMSG_MOVE_DISABLE_COLLISION, 1);
+        player->GetSession()->SendPacket(&data);
+
+        data.Initialize(SMSG_MOVE_ENABLE_DOUBLE_JUMP, 1);
+        player->GetSession()->SendPacket(&data);
+
+        handler->PSendSysMessage("lulz commande arrivé jusqueici");
         return true;
     }
 };
