@@ -3216,10 +3216,6 @@ public:
                 modifierNbArg = modifierArg;
             }
 
-            handler->SendSysMessage(modifierArg); //Debug
-            handler->SendSysMessage(modifierNbArg); //Debug
-            handler->SendSysMessage(modifierTypeArg); //Debug
-
             modifierRand = atoi(modifierNbArg);
         }
 
