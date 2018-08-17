@@ -135,7 +135,6 @@ public:
             { "noclip",           rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleNoclipCommand,           "" },
             { "rotate",           rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleRotatePlayerCommand,     "" },
             { "distance",         rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleDistanceCommand,         "" },
-            { "name",             rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleChangeName,              "" },
         };
         return commandTable;
     }

@@ -2438,7 +2438,7 @@ void ObjectMgr::LoadGameobjects()
         data.phaseUseFlags  = fields[17].GetUInt8();
         data.phaseId        = fields[18].GetUInt32();
         data.phaseGroup     = fields[19].GetUInt32();
-        data.size           = fields[22].GetFloat();
+        data.size           = fields[23].GetFloat();
 
         if (data.phaseUseFlags & ~PHASE_USE_FLAGS_ALL)
         {
@@ -2493,9 +2493,9 @@ void ObjectMgr::LoadGameobjects()
             }
         }
 
-        data.isActive = fields[20].GetBool();
+        data.isActive = fields[21].GetBool();
 
-        data.ScriptId = GetScriptId(fields[21].GetString());
+        data.ScriptId = GetScriptId(fields[22].GetString());
         if (!data.ScriptId)
             data.ScriptId = gInfo->ScriptId;
 
