@@ -392,14 +392,17 @@ public:
     static bool HandleGameObjectDeleteCommand(ChatHandler* handler, char const* args)
     {
         Player* player = handler->GetSession()->GetPlayer();
-        ObjectGuid::LowType guidLow = GetGuidFromArgsOrLastTargetedGo(handler, args);
         ObjectGuid::LowType gobjectNear = FindNearby(handler);
+        ObjectGuid::LowType guidLow;
 
         if (!gobjectNear || gobjectNear == 1) {
-            return false;
+            guidLow = GetGuidFromArgsOrLastTargetedGo(handler, args);
         }
         else if (!guidLow) {
-            guidLow = gobjectNear;
+            if (gobjectNear)
+                guidLow = gobjectNear;
+            else
+                return false;
         }
 
         GameObject* object = handler->GetObjectFromPlayerMapByDbGuid(guidLow);
