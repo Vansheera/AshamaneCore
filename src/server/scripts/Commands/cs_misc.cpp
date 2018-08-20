@@ -3368,24 +3368,18 @@ public:
     static bool HandleChangeNameCommand(ChatHandler* handler, char const* args)
     {
         Player* player = handler->GetSession()->GetPlayer();
-        std::string newName;
-        std::string newName2;
+        std::string playerName;
 
         if (!args)
             return false;
         else
-            newName = strtok((char*)args, "");
+            playerName = strtok((char*)args, "");
 
-        for (size_t i = 1; i < newName.length(); ++i) {
-            if (newName[i - 1] == ' ') {
-                newName[i - 1] = ' ';
-            }
-        }
+        /* Thanks Cromon ! <3 */
+        const std::regex regex{ " " };
+        playerName = std::regex_replace(playerName, regex, u8"\u00A0");
 
-        handler->PSendSysMessage("%s", newName);
-
-        //Set newName to player & kick him.
-        player->SetName(newName2);
+        player->SetName(playerName);
         player->GetSession()->KickPlayer();
 
         return true;
