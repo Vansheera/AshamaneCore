@@ -147,27 +147,27 @@ bool normalizePlayerName(std::string& name)
     if (name.empty())
         return false;
 
-    wchar_t wstr_buf[MAX_INTERNAL_PLAYER_NAME+1];
-    size_t wstr_len = MAX_INTERNAL_PLAYER_NAME;
+    //wchar_t wstr_buf[MAX_INTERNAL_PLAYER_NAME+1];
+    //size_t wstr_len = MAX_INTERNAL_PLAYER_NAME;
 
-    wchar_t new_wstr_buf[MAX_INTERNAL_PLAYER_NAME + 1];
-    memset(new_wstr_buf, 0, sizeof(new_wstr_buf));
-    size_t new_wstr_len = 1;
+    //wchar_t new_wstr_buf[MAX_INTERNAL_PLAYER_NAME + 1];
+    //memset(new_wstr_buf, 0, sizeof(new_wstr_buf));
+    //size_t new_wstr_len = 1;
 
-    if (!Utf8toWStr(name, &wstr_buf[0], wstr_len))
-        return false;
+    //if (!Utf8toWStr(name, &wstr_buf[0], wstr_len))
+    //    return false;
 
-    new_wstr_buf[0] = wcharToUpper(wstr_buf[0]);
-    for (size_t i = 1; i < wstr_len; ++i)
-    {
-        wchar_t character = wcharToLower(wstr_buf[i]);
-        if (character == '-') break; // Player name can be Username-ServerName since multi-realm, we just want player name
-        new_wstr_buf[i] = character;
-        ++new_wstr_len;
-    }
+    //new_wstr_buf[0] = wcharToUpper(wstr_buf[0]);
+    //for (size_t i = 1; i < wstr_len; ++i)
+    //{
+    //    wchar_t character = wcharToLower(wstr_buf[i]);
+    //    if (character == '-') break; // Player name can be Username-ServerName since multi-realm, we just want player name
+    //    new_wstr_buf[i] = character;
+    //    ++new_wstr_len;
+    //}
 
-    if (!WStrToUtf8(new_wstr_buf, new_wstr_len, name))
-        return false;
+    //if (!WStrToUtf8(new_wstr_buf, new_wstr_len, name))
+    //    return false;
 
     return true;
 }
@@ -8115,24 +8115,24 @@ bool isValidString(const std::wstring& wstr, uint32 strictMask, bool numericOrSp
 ResponseCodes ObjectMgr::CheckPlayerName(std::string const& name, LocaleConstant locale, bool create /*= false*/)
 {
     std::wstring wname;
-    if (!Utf8toWStr(name, wname))
-        return CHAR_NAME_INVALID_CHARACTER;
+    //if (!Utf8toWStr(name, wname))
+    //    return CHAR_NAME_INVALID_CHARACTER;
 
-    if (wname.size() > MAX_PLAYER_NAME)
-        return CHAR_NAME_TOO_LONG;
+    //if (wname.size() > MAX_PLAYER_NAME)
+    //    return CHAR_NAME_TOO_LONG;
 
-    uint32 minName = sWorld->getIntConfig(CONFIG_MIN_PLAYER_NAME);
-    if (wname.size() < minName)
-        return CHAR_NAME_TOO_SHORT;
+    //uint32 minName = sWorld->getIntConfig(CONFIG_MIN_PLAYER_NAME);
+    //if (wname.size() < minName)
+    //    return CHAR_NAME_TOO_SHORT;
 
-    uint32 strictMask = sWorld->getIntConfig(CONFIG_STRICT_PLAYER_NAMES);
-    if (!isValidString(wname, strictMask, false, create))
-        return CHAR_NAME_MIXED_LANGUAGES;
+    //uint32 strictMask = sWorld->getIntConfig(CONFIG_STRICT_PLAYER_NAMES);
+    //if (!isValidString(wname, strictMask, false, create))
+    //    return CHAR_NAME_MIXED_LANGUAGES;
 
-    wstrToLower(wname);
-    for (size_t i = 2; i < wname.size(); ++i)
-        if (wname[i] == wname[i-1] && wname[i] == wname[i-2])
-            return CHAR_NAME_THREE_CONSECUTIVE;
+    //wstrToLower(wname);
+    //for (size_t i = 2; i < wname.size(); ++i)
+    //    if (wname[i] == wname[i-1] && wname[i] == wname[i-2])
+    //        return CHAR_NAME_THREE_CONSECUTIVE;
 
     return sDB2Manager.ValidateName(wname, locale);
 }

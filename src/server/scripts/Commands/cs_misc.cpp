@@ -52,6 +52,8 @@
 #include "World.h"
 #include "WorldSession.h"
 #include <G3D/Quat.h>
+#include <codecvt>
+#include <string>
 
  // temporary hack until database includes are sorted out (don't want to pull in Windows.h everywhere from mysql.h)
 #ifdef GetClassName
@@ -135,6 +137,7 @@ public:
             { "noclip",           rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleNoclipCommand,           "" },
             { "rotate",           rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleRotatePlayerCommand,     "" },
             { "distance",         rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleDistanceCommand,         "" },
+            { "changename",       rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleChangeNameCommand,       "" },
         };
         return commandTable;
     }
@@ -3359,6 +3362,32 @@ public:
             handler->PSendSysMessage("%s est a %2.0f cm de vous.", targetName, distance);
         else
             handler->PSendSysMessage("%s est a %3.2f m de vous.", targetName, distance);
+        return true;
+    }
+
+    static bool HandleChangeNameCommand(ChatHandler* handler, char const* args)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        std::string newName;
+        std::string newName2;
+
+        if (!args)
+            return false;
+        else
+            newName = strtok((char*)args, "");
+
+        for (size_t i = 1; i < newName.length(); ++i) {
+            if (newName[i - 1] == ' ') {
+                newName[i - 1] = ' ';
+            }
+        }
+
+        handler->PSendSysMessage("%s", newName);
+
+        //Set newName to player & kick him.
+        player->SetName(newName2);
+        player->GetSession()->KickPlayer();
+
         return true;
     }
 
