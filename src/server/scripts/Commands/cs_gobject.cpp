@@ -395,14 +395,16 @@ public:
         ObjectGuid::LowType gobjectNear = FindNearby(handler);
         ObjectGuid::LowType guidLow;
 
-        if (!gobjectNear || gobjectNear == 1) {
-            guidLow = GetGuidFromArgsOrLastTargetedGo(handler, args);
+        if (gobjectNear != 1) {
+            guidLow = gobjectNear;
         }
-        else if (!guidLow) {
-            if (gobjectNear)
-                guidLow = gobjectNear;
-            else
+        else if (gobjectNear == 1) {
+            if (args) {
+                guidLow = atoi(args);
+            }
+            else {
                 return false;
+            }
         }
 
         GameObject* object = handler->GetObjectFromPlayerMapByDbGuid(guidLow);
