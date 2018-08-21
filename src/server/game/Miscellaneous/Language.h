@@ -1143,5 +1143,9 @@ enum TrinityStrings
 
     LANG_DEBUG_LFG_ON                             = 11024,
     LANG_DEBUG_LFG_OFF                            = 11025,
+
+    //Jok Custom
+    LANG_NAME_TOO_SHORT                           = 90000,
+    LANG_NAME_TOO_LONG                            = 90001,
 };
 #endif

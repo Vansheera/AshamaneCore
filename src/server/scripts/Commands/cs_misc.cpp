@@ -122,7 +122,7 @@ public:
             { "mailbox",          rbac::RBAC_PERM_COMMAND_MAILBOX,          false, &HandleMailBoxCommand,          "" },
             { "auras  ",          rbac::RBAC_PERM_COMMAND_LIST_AURAS,       false, &HandleAurasCommand,            "" },
             { "light  ",          rbac::RBAC_PERM_COMMAND_LIST_AURAS,       false, &HandleLightCommand,            "" },
-            //Jok Custom
+            /*                                                  Jok Custom                                           */
             { "spellvis",         rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleSpellVisCommand,         "" },
             { "unspellvis",       rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleUnSpellVisCommand,       "" },
             { "spellviskit",      rbac::RBAC_PERM_COMMAND_AURA,             false, &HandleSpellViskitCommand,      "" },
@@ -3301,12 +3301,10 @@ public:
 
     static bool HandleDistanceCommand(ChatHandler* handler, char const* args)
     {
-        //Phase 1 : recherche du type de la cible : gob, npc ou player ?
         WorldObject* target;
         std::string targetName;
         if (!*args)
         {
-            //Partie ciblage classique, si il y a pas d'args
             target = handler->getSelectedObject();
             if (!target)
             {
@@ -3317,12 +3315,10 @@ public:
         }
         else
         {
-            //Partie "joueur"
             std::string nameTargetPlayer = (char*)args;
             target = ObjectAccessor::FindPlayerByName(nameTargetPlayer);
             if (!target)
             {
-                //Partie "gob"
                 char* id = handler->extractKeyFromLink((char*)args, "Hgameobject");
                 if (!id)
                     return false;
@@ -3357,7 +3353,7 @@ public:
         double distance = (trunc(distanceFull * 10)) / 10;
 
         if (distance > 300)
-            handler->SendSysMessage("La distance entre vous est votre cible est bien trop importante. Veuillez vous rapprocher.");
+            handler->SendSysMessage("La distance entre vous et votre cible est bien trop importante. Veuillez vous rapprocher.");
         else if (distance < 1)
             handler->PSendSysMessage("%s est a %2.0f cm de vous.", targetName, distance);
         else
@@ -3367,18 +3363,31 @@ public:
 
     static bool HandleChangeNameCommand(ChatHandler* handler, char const* args)
     {
-        Player* player = handler->GetSession()->GetPlayer();
-        std::string playerName;
-
-        if (!args)
+        /* Thanks Cromon again! xD */
+        if (!*args || args == nullptr || strlen(args) <= 0)
             return false;
-        else
-            playerName = strtok((char*)args, "");
 
+        Player* player = handler->GetSession()->GetPlayer();
+        std::string playerName = strtok((char*)args, "");
+
+        if (playerName.length() <= 2) {
+            handler->PSendSysMessage(LANG_NAME_TOO_SHORT);
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+        else if (playerName.length() >= 24)
+        {
+            handler->PSendSysMessage(LANG_NAME_TOO_LONG);
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+
+        /* Replace simple space to special space */
         /* Thanks Cromon ! <3 */
         const std::regex regex{ " " };
         playerName = std::regex_replace(playerName, regex, u8"\u00A0");
 
+        /* Set the name to player and kick him to see the change */
         player->SetName(playerName);
         player->GetSession()->KickPlayer();
 
